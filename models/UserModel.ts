@@ -14,7 +14,6 @@ const User = new mongoose.Schema({
   },
   dob: {
     type: Date,
-    required: true,
   },
 });
 
