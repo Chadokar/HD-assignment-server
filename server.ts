@@ -4,6 +4,7 @@ import cors from "cors";
 // dotenv
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import errorHandler from "./middlewares/errorHandler";
 
 dotenv.config();
 const app = express();
@@ -11,6 +12,8 @@ const app = express();
 app.use(cors());
 
 app.use(express.json());
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
