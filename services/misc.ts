@@ -2,7 +2,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import Handlebars from "handlebars";
 
-const handlebarsReplacements = ({ source, replacements }) => {
+const handlebarsReplacements = ({ source, replacements }: any): string => {
   return Handlebars.compile(source)(replacements);
 };
 

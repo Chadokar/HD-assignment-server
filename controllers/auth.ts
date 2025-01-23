@@ -9,28 +9,32 @@ import {
 } from "../services/misc";
 import { sendMail, templateToHTML } from "../services/mailService";
 
-const signIn = async (req: Request, res: Response, next: NextFunction) => {
+const signIn = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password required" });
-    }
 
     const user = await UserModel.findOne({
       email,
     });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: "User not found" });
+      return;
     }
 
     if (!user.password) {
-      return res.status(400).json({ message: "Invalid password" });
+      res.status(400).json({ message: "Invalid password" });
+      return;
     }
 
     const isMatch = await compareHash(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid password" });
+      res.status(400).json({ message: "Invalid password" });
+      return;
     }
 
     const token = generateJWT({ id: user._id });
@@ -40,16 +44,22 @@ const signIn = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-const signInOtp = async (req: Request, res: Response, next: NextFunction) => {
+const signInOtp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { email } = req.body;
     if (!email) {
-      return res.status(400).json({ message: "Email required" });
+      res.status(400).json({ message: "Email required" });
+      return;
     }
 
     const user = await UserModel.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: "User not found" });
+      return;
     }
     const otp = Math.floor(100000 + Math.random() * 900000);
     const token = generateJWT({ email, otp }, { expiresIn: "5m" });
@@ -70,19 +80,25 @@ const signInOtp = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 // Verify OTP for sign-in
-const verifyOtp = async (req: Request, res: Response, next: NextFunction) => {
+const verifyOtp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { otp, token } = req.body;
     const decoded: any = verifyJWT(token);
 
     if (!decoded || decoded.otp !== otp) {
-      return res.status(401).json({ message: "Invalid or expired OTP" });
+      res.status(401).json({ message: "Invalid or expired OTP" });
+      return;
     }
 
     const user = await UserModel.findOne({ email: decoded.email });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: "User not found" });
+      return;
     }
 
     const jwtToken = generateJWT({ id: user._id }, { expiresIn: "1d" });
@@ -92,7 +108,11 @@ const verifyOtp = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-const signUp = async (req: Request, res: Response, next: NextFunction) => {
+const signUp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { name, dob, email } = req.body;
     // Send OTP to email
@@ -119,20 +139,21 @@ const signUpVerify = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
-    const { token, otp, password } = req.body;
+    const { token, otp } = req.body;
     // Verify token and OTP logic
-    const hashedPassword = await bcrypt.hash(password, 10);
     const decoded: any = verifyJWT(token);
 
     if (!decoded || decoded.otp !== otp) {
-      return res.status(401).json({ message: "Invalid or expired OTP" });
+      res.status(401).json({ message: "Invalid or expired OTP" });
+      return;
     }
-    const user = await UserModel.create({
-      ...req.body,
-      password: hashedPassword,
-    });
+    const user = await UserModel.findById(decoded.id);
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
     const jwtToken = generateJWT({ id: user._id });
     res.json({ user, token: jwtToken });
   } catch (error) {
@@ -140,4 +161,38 @@ const signUpVerify = async (
   }
 };
 
-export { signIn, signInOtp, verifyOtp, signUp, signUpVerify };
+const savePassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await UserModel.findByIdAndUpdate(req.body.user.id, {
+      password: hashedPassword,
+    });
+    res.json({ user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await UserModel.findById(req.body.user.id);
+    res.json({ user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export {
+  signIn,
+  signInOtp,
+  verifyOtp,
+  signUp,
+  signUpVerify,
+  savePassword,
+  getUser,
+};
