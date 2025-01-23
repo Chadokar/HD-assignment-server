@@ -1,6 +1,7 @@
 import { google } from "googleapis";
 import { Request, Response, NextFunction } from "express";
 import UserModel from "../models/UserModel";
+import { generateJWT } from "../services/misc";
 
 const client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -67,6 +68,9 @@ const decoder = async (req: Request, res: Response, next: NextFunction) => {
         name: payload.name,
       });
     }
+
+    const token = generateJWT({ id: user._id });
+    res.json({ user, token });
   } catch (error) {
     next(error);
   }

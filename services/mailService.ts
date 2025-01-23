@@ -23,4 +23,4 @@ const sendMail = async ({ to, subject, html }) =>
 const templateToHTML = (path: string) =>
   fs.readFileSync(path, "utf-8").toString();
 
-module.exports = { sendMail, templateToHTML };
+export { sendMail, templateToHTML };

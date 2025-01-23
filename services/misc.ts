@@ -1,5 +1,10 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import Handlebars from "handlebars";
+
+const handlebarsReplacements = ({ source, replacements }) => {
+  return Handlebars.compile(source)(replacements);
+};
 
 const generateJWT = (
   payload: object,
@@ -31,4 +36,11 @@ const compareHash = async (text: string, hash: string): Promise<boolean> => {
   return await bcrypt.compare(String(text), hash);
 };
 
-export { generateHash, generateJWT, verifyJWT, parseToken, compareHash };
+export {
+  generateHash,
+  generateJWT,
+  verifyJWT,
+  parseToken,
+  compareHash,
+  handlebarsReplacements,
+};
