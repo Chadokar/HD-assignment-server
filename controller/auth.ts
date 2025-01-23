@@ -124,6 +124,11 @@ const signUpVerify = async (
     const { token, otp, password } = req.body;
     // Verify token and OTP logic
     const hashedPassword = await bcrypt.hash(password, 10);
+    const decoded: any = verifyJWT(token);
+
+    if (!decoded || decoded.otp !== otp) {
+      return res.status(401).json({ message: "Invalid or expired OTP" });
+    }
     const user = await UserModel.create({
       ...req.body,
       password: hashedPassword,
