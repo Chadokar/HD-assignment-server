@@ -203,7 +203,18 @@ const savePassword = async (
 const getUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await UserModel.findById(req.body.user.id);
-    res.json({ user });
+    if (!user) {
+      res.status(401).json({ message: "User not found" });
+      return;
+    }
+    res.json({
+      user: {
+        name: user.name,
+        email: user.email,
+        id: user._id,
+        dob: user.dob,
+      },
+    });
   } catch (error) {
     next(error);
   }
