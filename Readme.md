@@ -20,6 +20,12 @@
    npm install
    ```
 
+   or
+
+   ```
+   npm i
+   ```
+
 3. **Configure environment variables**:
 
    - Create a `.env` file in the root directory.
