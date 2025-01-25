@@ -10,7 +10,20 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendMail = async ({ to, subject, html }) =>
+console.log(
+  "Email: ",
+  process.env.EMAIL,
+  " Password: ",
+  process.env.EMAIL_PASSWORD
+);
+
+interface SendMailOptions {
+  to: string;
+  subject: string;
+  html: string;
+}
+
+const sendMail = async ({ to, subject, html }: SendMailOptions) =>
   await new Promise((resolve, reject) => {
     const from = process.env.COMPANY + " <" + process.env.DISPLAY_EMAIL + ">";
     const options = { from, to, subject, html };

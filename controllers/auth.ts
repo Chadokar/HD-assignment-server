@@ -22,8 +22,7 @@ const signIn = async (
     });
 
     if (!user) {
-      res.status(404).json({ message: "User not found" });
-      return;
+      throw new Error("User not found");
     }
 
     if (!user.password) {
@@ -36,9 +35,18 @@ const signIn = async (
       res.status(400).json({ message: "Invalid password" });
       return;
     }
+    console.log("user : ", user);
 
     const token = generateJWT({ id: user._id });
-    res.json({ user, token });
+    res.json({
+      token,
+      user: {
+        name: user.name,
+        email: user.email,
+        id: user._id,
+        dob: user.dob,
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -115,9 +123,16 @@ const signUp = async (
 ): Promise<void> => {
   try {
     const { name, dob, email } = req.body;
+
+    const user = await UserModel.findOne({ email });
+    if (user) {
+      res.status(400).json({ message: "User already exists" });
+      return;
+    }
+
     // Send OTP to email
     const otp = Math.floor(100000 + Math.random() * 900000);
-    const token = generateJWT({ email, otp, name, dob }, { expiresIn: "5m" });
+    const token = generateJWT({ email, name, dob, otp }, { expiresIn: "1d" });
     const replacements = { otp, expiresIn: "5 minutes" };
     const source = templateToHTML("templates/otp.html");
     const content = handlebarsReplacements({ source, replacements });
@@ -144,18 +159,17 @@ const signUpVerify = async (
     const { token, otp } = req.body;
     // Verify token and OTP logic
     const decoded: any = verifyJWT(token);
+    console.log("decoded : ", decoded);
+    console.log(typeof decoded.otp, " ", typeof otp);
 
     if (!decoded || decoded.otp !== otp) {
       res.status(401).json({ message: "Invalid or expired OTP" });
       return;
     }
-    const user = await UserModel.findById(decoded.id);
-    if (!user) {
-      res.status(404).json({ message: "User not found" });
-      return;
-    }
-    const jwtToken = generateJWT({ id: user._id });
-    res.json({ user, token: jwtToken });
+    const { email, name, dob } = decoded;
+
+    const jwtToken = generateJWT({ email, name, dob }, { expiresIn: "1d" });
+    res.status(200).json({ token: jwtToken });
   } catch (error) {
     next(error);
   }
@@ -167,12 +181,20 @@ const savePassword = async (
   next: NextFunction
 ) => {
   try {
-    const { password } = req.body;
+    const { password, token } = req.body;
+    const decoded: any = verifyJWT(token);
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await UserModel.findByIdAndUpdate(req.body.user.id, {
+    const user = await UserModel.create({
+      name: decoded.name,
+      email: decoded.email,
+      dob: decoded.dob,
       password: hashedPassword,
     });
-    res.json({ user });
+
+    const { name, email, _id: id, dob } = user;
+    const jwtToken = generateJWT({ id });
+
+    res.status(201).json({ user: { name, email, id, dob }, token: jwtToken });
   } catch (error) {
     next(error);
   }

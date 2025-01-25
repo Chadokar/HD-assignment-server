@@ -5,7 +5,13 @@ const createNote = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { detail, userId } = req.body;
     const note = await NotesModel.create({ detail, userId });
-    res.status(201).json({ note });
+    res.status(201).json({
+      note: {
+        id: note._id,
+        detail: note.detail,
+        userId: note.userId,
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -13,12 +19,20 @@ const createNote = async (req: Request, res: Response, next: NextFunction) => {
 
 const getNotes = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
     const userId = req.body.user.id;
     const notes = await NotesModel.find({ userId })
-      .limit(Number(limit))
-      .skip((Number(limit) - 1) * Number(page));
-    res.status(201).json({ notes });
+      .limit(limit)
+      .skip((page - 1) * limit);
+
+    res.status(201).json(
+      notes.map((note) => ({
+        id: note._id,
+        detail: note.detail,
+        userId: note.userId,
+      }))
+    );
   } catch (error) {
     next(error);
   }

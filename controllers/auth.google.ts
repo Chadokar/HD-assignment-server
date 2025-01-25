@@ -29,24 +29,26 @@ const redirectedUrl = async (
 
 const decoder = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log("query : ", req.query);
+    // console.log("query : ", req.query);
 
     const code = Array.isArray(req.query.code)
       ? req.query.code[0]
       : req.query.code;
 
     if (typeof code !== "string") {
-      return res
+      res
         .status(400)
         .json({ message: "Authorization code not provided or invalid" });
+      return;
     }
 
-    console.log("code : ", code);
+    // console.log("code : ", code);
 
     const { tokens } = await client.getToken(code);
 
     if (!tokens || !tokens.id_token) {
-      return res.status(400).json({ message: "Invalid Google token" });
+      res.status(400).json({ message: "Invalid Google token" });
+      return;
     }
 
     const ticket = await client.verifyIdToken({
@@ -56,7 +58,8 @@ const decoder = async (req: Request, res: Response, next: NextFunction) => {
 
     const payload = ticket.getPayload();
     if (!payload) {
-      return res.status(400).json({ message: "Invalid Google token" });
+      res.status(400).json({ message: "Invalid Google token" });
+      return;
     }
 
     let user = await UserModel.findOne({
@@ -70,7 +73,10 @@ const decoder = async (req: Request, res: Response, next: NextFunction) => {
     }
 
     const token = generateJWT({ id: user._id });
-    res.json({ user, token });
+    res.json({
+      token,
+      user: { name: user.name, email: user.email, id: user._id },
+    });
   } catch (error) {
     next(error);
   }

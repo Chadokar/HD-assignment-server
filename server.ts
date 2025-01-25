@@ -1,12 +1,12 @@
 import express from "express";
 // import authRoutes from './routes/authRoutes';
 import cors from "cors";
-// dotenv
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import errorHandler from "./middlewares/errorHandler";
-
 dotenv.config();
+import errorHandler from "./middlewares/errorHandler";
+import router from "./routes";
+
 const app = express();
 
 app.use(cors());
@@ -14,8 +14,9 @@ app.use(cors());
 app.use(express.json());
 
 app.use(errorHandler);
-
-const PORT = process.env.PORT || 3000;
+app.use(router);
+const PORT = process.env.PORT || 8000;
+console.log("PORT", PORT);
 
 app.get("/", (req, res) => {
   res.send("Hello World");

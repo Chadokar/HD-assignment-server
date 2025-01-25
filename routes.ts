@@ -10,6 +10,7 @@ import {
   savePassword,
   getUser,
 } from "./controllers/auth";
+import { redirectedUrl, decoder } from "./controllers/auth.google";
 import validator from "./services/validator";
 import authenticate from "./middlewares/authMiddleware";
 const router = Router();
@@ -44,7 +45,7 @@ router.post(
   [
     body("name", "Name required").isString(),
     body("email", "Email required").isEmail(),
-    body("dob", "Date of birth required").isDate(),
+    body("dob", "Date of birth required").isString(),
   ],
   validator,
   signUp
@@ -63,9 +64,7 @@ router.post(
 router.post(
   "/save-password",
   [body("password", "Password required").isString()],
-  [header("Authorization", "Token required").isString()],
   validator,
-  authenticate,
   savePassword
 );
 
@@ -76,6 +75,12 @@ router.get(
   authenticate,
   getUser
 );
+
+// Google auth routes
+
+router.get("/google", decoder);
+
+router.get("/google/redirect", redirectedUrl);
 
 // Notes routes
 
@@ -103,3 +108,5 @@ router.delete(
   authenticate,
   deleteNote
 );
+
+export default router;
